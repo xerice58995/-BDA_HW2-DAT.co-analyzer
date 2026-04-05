@@ -156,6 +156,7 @@ function buildMetrics(
   const btcReturns: number[] = [];
 
   const baseMstr = aligned[0].mstr;
+  console.log(baseMstr);
   const baseBtc = aligned[0].btc;
   const baseQqq = aligned[0].qqq;
 
