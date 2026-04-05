@@ -166,11 +166,10 @@ function buildMetrics(
 
     const mstrRet = prev && prev.mstr !== 0 ? current.mstr / prev.mstr - 1 : 0;
     const btcRet = prev && prev.btc !== 0 ? current.btc / prev.btc - 1 : 0;
-    const qqqRet = prev && prev.qqq !== 0 ? current.qqq / prev.qqq - 1 : 0;
+    //const qqqRet = prev && prev.qqq !== 0 ? current.qqq / prev.qqq - 1 : 0;
 
     mstrReturns.push(mstrRet);
     btcReturns.push(btcRet);
-    qqqReturns.push(qqqRet);
 
     const mstrMarketCap = current.mstr * SHARES_OUTSTANDING;
     const btcHoldingsValue = current.btc * MSTR_BTC_HOLDINGS;
