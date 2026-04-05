@@ -3,7 +3,7 @@ import {
   fetchYahooHistory,
   alignByDate,
   buildMetrics,
-} from "../../../lib/metrics";
+} from "@/src/lib/metrics";
 
 type MetricsRow = {
   time: string;
