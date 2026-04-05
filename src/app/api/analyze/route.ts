@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  fetchYahooHistory,
+  alignByDate,
+  buildMetrics,
+} from "../../../lib/metrics";
 
 type MetricsRow = {
   time: string;
@@ -7,8 +12,6 @@ type MetricsRow = {
   qqq_norm: number;
   roll_corr: number;
 };
-
-type MetricsResponse = MetricsRow[] | { error: string; details?: string };
 
 type AnalysisResponse = {
   analysis: string;
@@ -28,45 +31,22 @@ function round3(value: number) {
   return Math.round(value * 1000) / 1000;
 }
 
-function getBaseUrl() {
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl}`;
-  }
-
-  const publicUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (publicUrl) {
-    return publicUrl;
-  }
-
-  return "http://localhost:3000";
-}
-
 async function fetchMetrics(): Promise<MetricsRow[]> {
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/metrics`, {
-    method: "GET",
-    cache: "no-store",
-    headers: {
-      accept: "application/json",
-    },
-  });
+  const [mstr, btc, qqq] = await Promise.all([
+    fetchYahooHistory("MSTR", 180),
+    fetchYahooHistory("BTC-USD", 180),
+    fetchYahooHistory("QQQ", 180),
+  ]);
 
-  const data = (await response.json()) as MetricsResponse;
+  const merged = alignByDate(mstr, btc, qqq);
 
-  if (!response.ok) {
-    const errorMessage =
-      typeof data === "object" && data && "error" in data
-        ? data.error
-        : `metrics request failed with status ${response.status}`;
-    throw new Error(errorMessage);
+  if (merged.length < 35) {
+    throw new Error(
+      "可用的市場資料不足，請稍後再試或檢查 Yahoo Finance 連線狀態。",
+    );
   }
 
-  if (!Array.isArray(data)) {
-    throw new Error("metrics API did not return an array");
-  }
-
-  return data;
+  return buildMetrics(merged);
 }
 
 function buildSummaryFromMetrics(metrics: MetricsRow[]) {
