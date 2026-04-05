@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import StatTile from "../components/StatTile";
@@ -29,22 +30,17 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // 取得最新的指標數據
-  const getLatestMetrics = (metricsData: MetricsData[]) => {
-    if (metricsData.length === 0) return null;
-    return metricsData[metricsData.length - 1];
-  };
-
   useEffect(() => {
     const fetchMetrics = async () => {
       setLoading(true);
       try {
         const response = await fetch("/api/metrics");
         const metricsData = await response.json();
-        setData(metricsData);
+        setData(Array.isArray(metricsData) ? metricsData : []);
 
-        // 自動觸發 AI 分析
-        handleAIAnalyze();
+        if (Array.isArray(metricsData) && metricsData.length > 0) {
+          await handleAIAnalyze();
+        }
       } catch (error) {
         console.error("Error fetching metrics:", error);
       } finally {
@@ -68,12 +64,11 @@ export default function Dashboard() {
     }
   };
 
-  const latestMetrics = getLatestMetrics(data);
+  const latestMetrics = data.length > 0 ? data[data.length - 1] : null;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* 頂部標題 */}
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-white">
             DAT.co MSTR 量化儀表板
@@ -83,7 +78,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* 頂部狀態卡片 */}
         {loading ? (
           <div className="grid grid-cols-4 gap-4">
             <div className="h-32 bg-gray-800 rounded animate-pulse" />
@@ -110,7 +104,7 @@ export default function Dashboard() {
               label="BTC Beta"
               value={analysis?.beta_btc?.toFixed(2) || "N/A"}
               unit="x"
-              color={(analysis?.beta_btc ?? 0 > 1.5) ? "orange" : "blue"}
+              color={(analysis?.beta_btc ?? 0) > 1.5 ? "orange" : "blue"}
               icon="📈"
             />
             <StatTile
@@ -130,9 +124,7 @@ export default function Dashboard() {
           </div>
         ) : null}
 
-        {/* 主要內容區域 */}
         <div className="grid grid-cols-12 gap-6 min-h-[600px]">
-          {/* 左側：圖表 (65%) */}
           <div className="col-span-8 bg-gray-800 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">市場指標分析</h2>
@@ -153,9 +145,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 右側：AI 分析面板 (35%) */}
           <div className="col-span-4 flex flex-col gap-4">
-            {/* 分析內容框 */}
             <div className="flex-1 bg-gray-800 rounded-lg p-6 border border-gray-700 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">🤖 AI 深度洞察</h2>
@@ -188,7 +178,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* 操作按鈕 */}
             <div className="flex gap-3">
               <button
                 onClick={handleAIAnalyze}
@@ -207,7 +196,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 圖例和說明 */}
         <div className="grid grid-cols-3 gap-4 bg-gray-800 rounded-lg p-4 border border-gray-700 text-xs text-gray-300">
           <div className="space-y-2">
             <p className="font-semibold text-white">📊 圖表說明</p>

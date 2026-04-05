@@ -24,7 +24,6 @@ export default function Chart({ data }: { data: any[] }) {
       },
     });
 
-    // 1. Premium 折線 - 加強視覺效果 (綁定左側 Y 軸)
     const premiumSeries = chart.addAreaSeries({
       lineColor: "#10b981",
       topColor: "rgba(16, 185, 129, 0.6)",
@@ -36,7 +35,6 @@ export default function Chart({ data }: { data: any[] }) {
       data.map((d) => ({ time: d.time, value: d.premium })),
     );
 
-    // 設定基準線 0% - 公允價值
     premiumSeries.createPriceLine({
       price: 0,
       color: "#ef4444",
@@ -46,7 +44,6 @@ export default function Chart({ data }: { data: any[] }) {
       title: "公允價值 (0%)",
     });
 
-    // 設定警戒線 +25% - 回撤風險
     premiumSeries.createPriceLine({
       price: 25,
       color: "#f97316",
@@ -56,7 +53,6 @@ export default function Chart({ data }: { data: any[] }) {
       title: "回撤警戒 (+25%)",
     });
 
-    // 設定警戒線 +10% - 佈局機會
     premiumSeries.createPriceLine({
       price: 10,
       color: "#3b82f6",
@@ -66,29 +62,26 @@ export default function Chart({ data }: { data: any[] }) {
       title: "佈局機會 (+10%)",
     });
 
-    // 2. BTC 歸一化報酬率 - 調細虛線 (綁定右側 Y 軸)
     const btcSeries = chart.addLineSeries({
       color: "#f59e0b",
       priceScaleId: "right",
       title: "BTC (Base 100)",
       lineWidth: 2,
-      lineStyle: 1, // 虛線
+      lineStyle: 1,
     });
     btcSeries.setData(data.map((d) => ({ time: d.time, value: d.btc_norm })));
 
-    // 3. QQQ 歸一化報酬率 - 調細虛線 (綁定右側 Y 軸)
     const qqqSeries = chart.addLineSeries({
       color: "#3b82f6",
       priceScaleId: "right",
       title: "QQQ (Base 100)",
       lineWidth: 2,
-      lineStyle: 1, // 虛線
+      lineStyle: 1,
     });
     qqqSeries.setData(data.map((d) => ({ time: d.time, value: d.qqq_norm })));
 
     chart.timeScale().fitContent();
 
-    // 監聽視窗大小變化
     const handleResize = () => {
       if (chartContainerRef.current) {
         const width = chartContainerRef.current.clientWidth;
