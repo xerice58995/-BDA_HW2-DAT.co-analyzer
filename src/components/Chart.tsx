@@ -50,7 +50,7 @@ export default function Chart({ data }: { data: any[] }) {
     premiumSeries.createPriceLine({
       price: 25,
       color: "#f97316",
-      lineWidth: 1.5,
+      lineWidth: 2,
       lineStyle: 2,
       axisLabelVisible: true,
       title: "回撤警戒 (+25%)",
@@ -60,7 +60,7 @@ export default function Chart({ data }: { data: any[] }) {
     premiumSeries.createPriceLine({
       price: 10,
       color: "#3b82f6",
-      lineWidth: 1.5,
+      lineWidth: 2,
       lineStyle: 2,
       axisLabelVisible: true,
       title: "佈局機會 (+10%)",
@@ -71,7 +71,7 @@ export default function Chart({ data }: { data: any[] }) {
       color: "#f59e0b",
       priceScaleId: "right",
       title: "BTC (Base 100)",
-      lineWidth: 1.5,
+      lineWidth: 2,
       lineStyle: 1, // 虛線
     });
     btcSeries.setData(data.map((d) => ({ time: d.time, value: d.btc_norm })));
@@ -81,7 +81,7 @@ export default function Chart({ data }: { data: any[] }) {
       color: "#3b82f6",
       priceScaleId: "right",
       title: "QQQ (Base 100)",
-      lineWidth: 1.5,
+      lineWidth: 2,
       lineStyle: 1, // 虛線
     });
     qqqSeries.setData(data.map((d) => ({ time: d.time, value: d.qqq_norm })));

@@ -171,7 +171,7 @@ function buildMetrics(
     mstrReturns.push(mstrRet);
     btcReturns.push(btcRet);
 
-    const mstrMarketCap = current.mstr * SHARES_OUTSTANDING;
+    //const mstrMarketCap = current.mstr * SHARES_OUTSTANDING;
     const btcHoldingsValue = current.btc * MSTR_BTC_HOLDINGS;
 
     const btcNavPerShare =
