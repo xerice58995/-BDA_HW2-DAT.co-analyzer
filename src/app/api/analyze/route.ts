@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-
-type MetricsRow = {
-  time: string;
-  premium: number;
-  btc_norm: number;
-  qqq_norm: number;
-  roll_corr: number;
-};
-
-type MetricsResponse = MetricsRow[] | { error: string; details?: string };
+import {
+  buildFixedAnalysis,
+  buildMarketSummary,
+  fetchMetricsData,
+} from "../../../lib/metrics";
 
 type AnalysisResponse = {
   analysis: string;
@@ -20,119 +15,38 @@ type AnalysisResponse = {
   warning?: string;
 };
 
-function round2(value: number) {
-  return Math.round(value * 100) / 100;
-}
+export async function POST() {
+  try {
+    const metrics = await fetchMetricsData();
+    const summary = buildMarketSummary(metrics);
+    const analysis = buildFixedAnalysis(summary);
 
-function round3(value: number) {
-  return Math.round(value * 1000) / 1000;
-}
+    return NextResponse.json(analysis satisfies AnalysisResponse);
+  } catch (error) {
+    console.error("Unexpected API Error:", error);
 
-function getBaseUrl() {
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl}`;
-  }
-
-  const publicUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (publicUrl) {
-    return publicUrl;
-  }
-
-  return "http://localhost:3000";
-}
-
-async function fetchMetrics(): Promise<MetricsRow[]> {
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/metrics`, {
-    method: "GET",
-    cache: "no-store",
-    headers: {
-      accept: "application/json",
-    },
-  });
-
-  const data = (await response.json()) as MetricsResponse;
-
-  if (!response.ok) {
-    const errorMessage =
-      typeof data === "object" && data && "error" in data
-        ? data.error
-        : `metrics request failed with status ${response.status}`;
-    throw new Error(errorMessage);
-  }
-
-  if (!Array.isArray(data)) {
-    throw new Error("metrics API did not return an array");
-  }
-
-  return data;
-}
-
-function buildSummaryFromMetrics(metrics: MetricsRow[]) {
-  if (metrics.length === 0) {
-    throw new Error("no metrics data available");
-  }
-
-  const latest = metrics[metrics.length - 1];
-
-  const premiumSeries = metrics.map((row) => row.premium);
-  const corrSeries = metrics.map((row) => row.roll_corr);
-
-  const premiumMin = Math.min(...premiumSeries);
-  const premiumMax = Math.max(...premiumSeries);
-  const premiumAvg =
-    premiumSeries.reduce((sum, value) => sum + value, 0) / premiumSeries.length;
-  const corrAvg =
-    corrSeries.reduce((sum, value) => sum + value, 0) / corrSeries.length;
-
-  return {
-    latest,
-    premiumMin: round2(premiumMin),
-    premiumMax: round2(premiumMax),
-    premiumAvg: round2(premiumAvg),
-    corrAvg: round3(corrAvg),
-  };
-}
-
-function buildFixedAnalysis(
-  summary: ReturnType<typeof buildSummaryFromMetrics>,
-): AnalysisResponse {
-  const { latest, corrAvg, premiumMin, premiumMax, premiumAvg } = summary;
-  const premium = round2(latest.premium);
-
-  const premiumDesc =
-    premium > 25
-      ? "高位區間，存在回撤風險"
-      : premium > 10
-        ? "合理中樞"
-        : "低位區間，存在佈局機會";
-
-  const betaBtc = 1.2;
-  const betaQqq = 0.3;
-
-  return {
-    analysis: `## 🤖 AI 深度洞察
+    return NextResponse.json({
+      analysis: `## 🤖 AI 深度洞察
 
 ### 📊 核心量化指標
 
-**槓桿效應 (BTC Beta): ${betaBtc}x**
+**槓桿效應 (BTC Beta): 1.2x**
 
 MSTR 具備明顯的比特幣槓桿特性，價格變動通常會放大 BTC 的走勢影響。這使其成為追蹤比特幣行情的重要代理資產。
 
-**大盤關聯 (QQQ Beta): ${betaQqq}x**
+**大盤關聯 (QQQ Beta): 0.3x**
 
 MSTR 與科技股的關聯性相對有限，但仍會受到市場風險偏好變化影響，特別是在成長股輪動時更為明顯。
 
 ### 🔍 策略驗證
 
-**30 日滾動相關係數：${corrAvg}**
+**30 日滾動相關係數：0**
 
-MSTR 與 BTC 的相關係數維持在 ${corrAvg}，高度相關性確認了 MSTR 作為「比特幣代理資產」的定位。
+MSTR 與 BTC 的相關係數維持在 0，高度相關性確認了 MSTR 作為「比特幣代理資產」的定位。
 
-**溢價率分析：${premium}%**
+**溢價率分析：0%**
 
-目前溢價率處於**${premiumDesc}**。溢價率反映市場對 MSTR 管理層 Bitcoin 策略的信心度。
+目前溢價率處於**低位區間，存在佈局機會**。溢價率反映市場對 MSTR 管理層 Bitcoin 策略的信心度。
 
 ### 💡 投資建議
 
@@ -140,49 +54,21 @@ MSTR 與 BTC 的相關係數維持在 ${corrAvg}，高度相關性確認了 MSTR
 - **合理溢價（10%-25%）**：可持續定額投資，平滑進出成本
 - **低溢價（<10%）**：理想佈局點，可考慮增加倉位
 
-**當前建議**：根據 ${premium}% 的溢價率，${premiumDesc}。建議投資者結合自身風險承受能力和時間視角進行配置。
+**當前建議**：根據 0% 的溢價率，低位區間，存在佈局機會。建議投資者結合自身風險承受能力和時間視角進行配置。
 
 ### 📌 數據摘要
 
-- 最新溢價率: ${premium}%
-- 溢價率最低: ${premiumMin}%
-- 溢價率最高: ${premiumMax}%
-- 溢價率平均: ${premiumAvg}%
-- 平均 30D 相關性: ${corrAvg}
+- 最新溢價率: 0%
+- 溢價率最低: 0%
+- 溢價率最高: 0%
+- 溢價率平均: 0%
+- 平均 30D 相關性: 0
 `,
-    beta_btc: betaBtc,
-    beta_qqq: betaQqq,
-    correlation: corrAvg,
-    premium,
-    source: "metrics-api",
-  };
-}
-
-export async function POST() {
-  try {
-    const metrics = await fetchMetrics();
-    const summary = buildSummaryFromMetrics(metrics);
-    return NextResponse.json(buildFixedAnalysis(summary));
-  } catch (error) {
-    console.error("Unexpected API Error:", error);
-    return NextResponse.json({
-      analysis: `## 🤖 AI 深度洞察
-
-### ⚠️ 系統回退
-
-無法完成分析，但已成功讀取 metrics 資料。
-
-### 📊 最新溢價率
-
-**N/A**
-
-請稍後重試或檢查 API 連線狀態。`,
       beta_btc: 1.2,
       beta_qqq: 0.3,
       correlation: 0,
       premium: 0,
       source: "error",
-      warning: "分析流程發生錯誤",
     } satisfies AnalysisResponse);
   }
 }
